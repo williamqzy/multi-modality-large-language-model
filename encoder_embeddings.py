@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class VisionLanguageEncoder(nn.Module):
     def __init__(self, text_embedding, vision_embedding):
         super().__init__()
@@ -83,3 +82,27 @@ class VisionEmbedder(nn.Module):
             x = torch.cat((cls_tokens, x), dim=1)
 
         return x
+
+class CustomTextEmbedding(nn.Embedding):
+    def reset_parameters(self):
+        nn.init.normal_(self.weight, mean=0, std=self.embedding_dim ** -0.5)
+        self._fill_padding_idx_with_zero()
+
+class CustomPositionalEmbedding(nn.Embedding):
+    def forward(
+        self,
+        x,
+        positions=None,
+        **kwargs,
+    ):
+        if positions is None:
+            positions = torch.arange(2, x.size(1) + 2, device=x.device).long().unsqueeze(0)
+        return F.embedding(
+            positions,
+            self.weight,
+            self.padding_idx,
+            self.max_norm,
+            self.norm_type,
+            self.scale_grad_by_freq,
+            self.sparse,
+        )
